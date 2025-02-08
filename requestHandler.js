@@ -1,5 +1,6 @@
 const fs = require('fs');
 const main_view = fs.readFileSync('./main.html', 'utf-8');
+const orderlist_view = fs.readFileSync("./orderlist.html", 'utf-8');
 
 const mariadb = require('./database/connect/mariadb');
 
@@ -57,6 +58,35 @@ function order(response, productId) {
     response.end();
 }
 
+function orderlist(response) {
+    console.log('orderlist');
+
+    response.writeHead(200, { 'Content-Type': 'text/html' });
+
+    mariadb.query("SELECT * FROM orderlist", function (err, rows) {
+        if (err) {
+            console.error("Database query error:", err);
+            response.write("<h2>Error fetching order list</h2>");
+            response.end();
+            return;
+        }
+
+        // 먼저 orderlist.html 내용을 출력
+        response.write(orderlist_view);
+
+        // 테이블 안에 데이터 삽입 (orderlist.html에서 <table>이 이미 존재한다고 가정)
+        rows.forEach(element => {
+            response.write("<tr>"
+                + "<td>" + element.product_id + "</td>"
+                + "<td>" + element.order_date + "</td>"
+                + "</tr>"
+            );
+        });
+
+        response.write("</table>"); // 테이블이 닫혔는지 확인!
+        response.end();
+    });
+}
 
 function favicon(response) {
     console.log('favorite icons');
@@ -68,7 +98,7 @@ function favicon(response) {
 
 let handle = {}; //key, value
 handle['/'] = main;
-//handle['/orderlist.html'] = orderlist;
+handle['/orderlist.html'] = orderlist;
 handle['/order'] = order;
 
 handle['/favicon.ico'] = favicon;
